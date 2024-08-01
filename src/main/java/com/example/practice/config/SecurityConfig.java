@@ -2,6 +2,7 @@ package com.example.practice.config;
 
 import com.example.practice.auth.AuthenticationUserDetailsService;
 import com.example.practice.auth.filter.JwtAuthFilter;
+import com.example.practice.entity.User;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -15,6 +16,7 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.NoOpPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -31,13 +33,11 @@ public class SecurityConfig {
     private final JwtAuthFilter jwtAuthenticationFilter;
     private final AuthenticationUserDetailsService userService;
 
-    private final List<String> appURL;
     private final String[] whitelistURLs;
     public SecurityConfig(JwtAuthFilter jwtAuthenticationFilter, AuthenticationUserDetailsService userService,
-                          @Value("${cors.allowedOrigins}") List<String> appURL, @Value("${whitelisted.endpoints}")String[] whitelistURLs ) {
+                           @Value("${whitelisted.endpoints}")String[] whitelistURLs ) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
         this.userService = userService;
-        this.appURL = appURL;
         this.whitelistURLs = whitelistURLs;
     }
     @Bean
@@ -56,7 +56,7 @@ public class SecurityConfig {
                 .cors(cors -> cors
                         .configurationSource(request -> {
                             CorsConfiguration config = new CorsConfiguration();
-                            config.setAllowedOrigins(appURL);
+//                            config.setAllowedOrigins(appURL);
                             config.setAllowedMethods(Collections.singletonList("*"));
                             config.setAllowedHeaders(Collections.singletonList("*"));
                             return config;
@@ -72,7 +72,8 @@ public class SecurityConfig {
     @Bean
     public AuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
-        authProvider.setUserDetailsService(userService.userDetailsService());
+        UserDetailsService ur =userService.userDetailsService();
+        authProvider.setUserDetailsService(ur);
         authProvider.setPasswordEncoder(passwordEncoder());
         return authProvider;
     }

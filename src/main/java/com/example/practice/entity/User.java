@@ -1,15 +1,18 @@
 package com.example.practice.entity;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.GenericGenerator;
+import org.springframework.data.annotation.CreatedBy;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedBy;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
@@ -20,6 +23,7 @@ import java.util.UUID;
 @AllArgsConstructor
 @Builder
 @Table(name = "users")
+@EntityListeners(AuditingEntityListener.class)
 public class User implements UserDetails {
 
     @Id
@@ -33,6 +37,22 @@ public class User implements UserDetails {
     private String password;
     private String status;
     private String phoneNumber;
+    private Date lastLogin;
+    private long loginAttempts;
+
+    @CreatedDate
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date dateCreated;
+
+    @LastModifiedDate
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date dateUpdated;
+
+    @LastModifiedBy
+    private String updatedBy;
+
+    @CreatedBy
+    private String createdBy;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

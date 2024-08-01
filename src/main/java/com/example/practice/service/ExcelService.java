@@ -1,7 +1,11 @@
 package com.example.practice.service;
 
+import com.example.practice.dto.ResponseDto;
 import com.example.practice.entity.User;
+import com.example.practice.exception.CustomException;
 import com.example.practice.repository.UserRepository;
+import com.example.practice.util.AppConstants;
+import com.example.practice.util.ErrorConstants;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.ss.usermodel.Cell;
@@ -14,7 +18,11 @@ import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.text.MessageFormat;
 import java.util.Base64;
+import java.util.List;
+
+import static com.example.practice.util.AppConstants.RESPONSE_SUCCESS;
 
 @Service
 @RequiredArgsConstructor
@@ -23,7 +31,7 @@ public class ExcelService {
 
     private final UserRepository userRepository;
 
-    public String generateExcel() throws IOException {
+    public ResponseDto<String> generateExcel(){
         log.info("generating excel sheet..");
         SXSSFWorkbook workbook = new SXSSFWorkbook();
         Sheet sheet = workbook.createSheet("Users");
@@ -56,14 +64,21 @@ public class ExcelService {
         }
 
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        workbook.write(outputStream);
-        workbook.dispose();
-        workbook.close();
-
+        try {
+            workbook.write(outputStream);
+            workbook.dispose();
+            workbook.close();
+        } catch (IOException e) {
+            log.info("Error while generating excel sheet {}", e.getMessage());
+            throw new CustomException(ErrorConstants.REPORT_ERROR_CODE,ErrorConstants.REPORT_ERROR_MESSAGE);
+        }
         byte[] excelBytes = outputStream.toByteArray();
         String base64Encoded = Base64.getEncoder().encodeToString(excelBytes);
         log.info("Length of  byte code {}",excelBytes.length);
         log.info("Length of base64 code {}", base64Encoded.length());
-        return base64Encoded;
+        return ResponseDto.<String>builder()
+                .status(RESPONSE_SUCCESS)
+                .data(List.of(base64Encoded))
+                .build();
     }
 }

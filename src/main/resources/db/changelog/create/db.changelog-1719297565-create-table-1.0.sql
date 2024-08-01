@@ -19,6 +19,8 @@ CREATE TABLE users (
     password VARCHAR NOT NULL,
     status VARCHAR NOT NULL,
     phone_number VARCHAR UNIQUE,
+    last_login TIMESTAMPTZ,
+    login_attempts NUMERIC,
     CONSTRAINT USERS_PK PRIMARY KEY (ID)
 ) INHERITS (AUDITABLE_ENTITY);
 

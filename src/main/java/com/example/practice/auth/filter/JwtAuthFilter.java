@@ -4,12 +4,12 @@ import com.example.practice.auth.security.JwtService;
 import com.example.practice.entity.User;
 import com.example.practice.service.UserService;
 import io.jsonwebtoken.JwtException;
-import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.ThreadContext;
 import org.springframework.beans.factory.annotation.Value;
@@ -30,6 +30,7 @@ import java.util.UUID;
 
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class JwtAuthFilter extends OncePerRequestFilter {
     private final JwtService jwtService;
     private final HandlerExceptionResolver handlerExceptionResolver;
@@ -65,6 +66,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
             filterChain.doFilter(request, response);
         } catch (Exception exception) {
+            log.error("error in jwt auth filter {}", exception.getMessage());
             handlerExceptionResolver.resolveException(request, response, null, exception);
             ThreadContext.remove("correlationId");
         }
