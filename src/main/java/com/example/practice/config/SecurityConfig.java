@@ -2,7 +2,6 @@ package com.example.practice.config;
 
 import com.example.practice.auth.AuthenticationUserDetailsService;
 import com.example.practice.auth.filter.JwtAuthFilter;
-import com.example.practice.entity.User;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -24,7 +23,6 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 
 import java.util.Collections;
-import java.util.List;
 
 @Configuration
 @EnableWebSecurity
