@@ -3,6 +3,7 @@ package com.example.practice.auth.filter;
 import com.example.practice.auth.security.JwtService;
 import com.example.practice.entity.User;
 import com.example.practice.service.UserService;
+import com.example.practice.util.AppConstants;
 import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -91,7 +92,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     }
 
     private static boolean loginAPICall(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain, String authHeader) throws IOException, ServletException {
-        if (StringUtils.isEmpty(authHeader) || !StringUtils.startsWith(authHeader, "Bearer ")) {
+        if (StringUtils.isEmpty(authHeader) || !StringUtils.startsWith(authHeader, AppConstants.BEARER)) {
             filterChain.doFilter(request, response);
             return true;
         }
@@ -99,13 +100,13 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     }
 
     private static void mandatoryCheck(String authHeader, String requestUri) {
-        if ((StringUtils.isEmpty(authHeader) || !StringUtils.startsWith(authHeader, "Bearer ")) && !StringUtils.endsWith(requestUri, "/login")){
+        if ((StringUtils.isEmpty(authHeader) || !StringUtils.startsWith(authHeader, AppConstants.BEARER)) && !StringUtils.endsWith(requestUri, "/login")){
             throw new JwtException("Token is required.");
         }
     }
 
     private boolean whiteListingCheck(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain, String authHeader, String requestUri) throws IOException, ServletException {
-        if ((StringUtils.isEmpty(authHeader) || !StringUtils.startsWith(authHeader, "Bearer "))){
+        if ((StringUtils.isEmpty(authHeader) || !StringUtils.startsWith(authHeader, AppConstants.BEARER))){
             String withoutContext = requestUri.replaceFirst(request.getContextPath(),"");
             for(String whitelistURL : whitelistURLs){
                 if(withoutContext.startsWith(whitelistURL)){
@@ -114,7 +115,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 }
             }
         }
-        if ((StringUtils.isEmpty(authHeader) || !StringUtils.startsWith(authHeader, "Bearer ")) && request.getMethod().equalsIgnoreCase(HttpMethod.OPTIONS.name())) {
+        if ((StringUtils.isEmpty(authHeader) || !StringUtils.startsWith(authHeader, AppConstants.BEARER)) && request.getMethod().equalsIgnoreCase(HttpMethod.OPTIONS.name())) {
             filterChain.doFilter(request, response);
             return true;
         }
