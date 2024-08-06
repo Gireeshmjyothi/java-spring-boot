@@ -1,8 +1,9 @@
 package com.example.practice;
 
 import com.example.practice.config.audit.SpringSecurityAuditorAware;
+import com.example.practice.dsa.LinkedList;
 import com.example.practice.dsa.SearchAlg;
-import com.example.practice.dsa.SortingAlg;
+import com.example.practice.dsa.Stack;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.actuate.autoconfigure.security.servlet.ManagementWebSecurityAutoConfiguration;
@@ -30,8 +31,6 @@ public class PracticeApplication implements WebMvcConfigurer {
 
 	public static void main(String[] args) {
 		SpringApplication.run(PracticeApplication.class, args);
-//		int[] arr = new int[1000];
-//		int target = 900;
 		int[] arr = {1,2,3,5,6,7,8,23,30};
 		int target = 3;
 
@@ -59,31 +58,29 @@ public class PracticeApplication implements WebMvcConfigurer {
 			log.info("No binaryRecursive value found for the given target.");
 		}
 
-		int[] unsortedArray = {3,5,2,1,4};
-		for (int j : unsortedArray) {
-			System.out.print(" "+j);
-		}
-		//Bubble sort
-		System.out.println();
-		int[] sortedArray = SortingAlg.bubbleSort(unsortedArray);
-        for (int j : sortedArray) {
-			System.out.print(" "+j);
-        }
+		LinkedList list =  new LinkedList();
+		list.insert(10);
+		list.insert(12);
+		list.insert(2);
+		list.insertAtStart(23);
 
-		//Selection sort
-		int[] selectionSort = SortingAlg.selectionSort(unsortedArray);
-		System.out.println();
-		for (int j : selectionSort) {
-			System.out.print(" "+j);
-		}
+		list.insertAt(0,30);
 
-		//Insertion sort
-		int[] unsortedArr = {3,5,2,1,4};
-		int[] insertionSort = SortingAlg.insertionSort(unsortedArr);
-		System.out.println();
-		for (int j : insertionSort) {
-			System.out.print(" "+j);
-		}
+		list.deleteAt(2);
+
+//		list.show();
+
+		Stack l = new Stack();
+		l.push(10);
+		l.push(23);
+		l.push(12);
+
+		System.out.println(l.peek());
+		System.out.println(l.pop());
+
+
+		l.show();
+
 	}
 
 	@Bean
