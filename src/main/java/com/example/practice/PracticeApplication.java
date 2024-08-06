@@ -58,7 +58,7 @@ public class PracticeApplication implements WebMvcConfigurer {
 			log.info("No binaryRecursive value found for the given target.");
 		}
 
-		int[] unsortedArray = {2,5,1,4,6,7};
+		int[] unsortedArray = {3,5,2,1,4};
 		for (int j : unsortedArray) {
 			System.out.print(" "+j);
 		}
@@ -77,7 +77,8 @@ public class PracticeApplication implements WebMvcConfigurer {
 		}
 
 		//Insertion sort
-		int[] insertionSort = SortingAlg.insertionSort(unsortedArray);
+		int[] unsortedArr = {3,5,2,1,4};
+		int[] insertionSort = SortingAlg.insertionSort(unsortedArr);
 		System.out.println();
 		for (int j : insertionSort) {
 			System.out.print(" "+j);
