@@ -5,15 +5,23 @@ public class Stack {
     int top = 0;
 
     public void push(int data){
-        stack[top] = data;
-        top++;
+        if(top == 5){
+            System.out.println("Stack is full");
+        }else {
+            stack[top] = data;
+            top++;
+        }
     }
 
     public int pop(){
-        int data;
-        top--;
-        data = stack[top];
-        stack[top] = 0;
+        int data = 0;
+        if(isEmpty()){
+            System.out.println("Stack is empty");
+        }else {
+            top--;
+            data = stack[top];
+            stack[top] = 0;
+        }
         return data;
     }
 
@@ -25,9 +33,17 @@ public class Stack {
     }
 
     public void show(){
-        for (int a = 0; a < stack.length; a++) {
-            System.out.print(stack[a] + " ");
+        for (int i : stack) {
+            System.out.print(i + " ");
         }
+    }
+
+    public int size(){
+        return top;
+    }
+
+    public boolean isEmpty(){
+        return top<=0;
     }
 
 }

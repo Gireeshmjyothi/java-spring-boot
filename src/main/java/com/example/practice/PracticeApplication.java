@@ -1,9 +1,8 @@
 package com.example.practice;
 
 import com.example.practice.config.audit.SpringSecurityAuditorAware;
-import com.example.practice.dsa.LinkedList;
-import com.example.practice.dsa.SearchAlg;
-import com.example.practice.dsa.Stack;
+import com.example.practice.dsa.*;
+import com.example.practice.dsa.tree.BinaryTree;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.actuate.autoconfigure.security.servlet.ManagementWebSecurityAutoConfiguration;
@@ -74,12 +73,46 @@ public class PracticeApplication implements WebMvcConfigurer {
 		l.push(10);
 		l.push(23);
 		l.push(12);
+		l.push(12);
 
 		System.out.println(l.peek());
 		System.out.println(l.pop());
+//		System.out.println("Size is : "+ l.size());
+//		System.out.println("is empty : "+l.isEmpty());
+//		l.show();
 
+		DynamicStack li = new DynamicStack();
+		li.push(12);
+		li.show();
+		li.push(22);
+		li.show();
+		li.push(33);
+//		li.show();
 
-		l.show();
+		Queue queue = new Queue();
+		System.out.println(queue.isEmpty());
+		System.out.println(queue.deQueue());
+		queue.enQueue(12);
+		queue.enQueue(22);
+		queue.enQueue(42);
+
+//		queue.deQueue();
+//		queue.deQueue();
+		queue.enQueue(321);
+		queue.enQueue(443);
+		System.out.println(queue.isFull());
+//		queue.show();
+
+		BinaryTree tree = new BinaryTree();
+
+		tree.insert(8);
+		tree.insert(7);
+		tree.insert(12);
+		tree.insert(15);
+		tree.insert(2);
+		tree.insert(5);
+
+		tree.inOrder();
 
 	}
 
