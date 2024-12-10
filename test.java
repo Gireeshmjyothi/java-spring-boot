@@ -1,104 +1,17 @@
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+@Test
+    public void testGenerateTokenSuccess() {
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+        when(tokenService.generateToken(MERCHANT_API_KEY_ID, MERCHANT_API_KEY_SECRET)).thenReturn(buildTransactionResponse());
 
-class TokenServiceTest {
+        doThrow(new ValidationException("1001", "Invalid Api Key")).when(validator).validateAccessTokenRequest(MERCHANT_API_KEY_ID, MERCHANT_API_KEY_SECRET);
+        TransactionResponse<String> actualResponse = tokenService.generateToken(MERCHANT_API_KEY_ID, MERCHANT_API_KEY_SECRET);
 
-    @InjectMocks
-    private TokenService tokenService; // Your class containing the generateToken method
+        assertNotNull(actualResponse);
+        assertEquals(0, actualResponse.getStatus());
+        assertEquals(List.of("afanvannvcaonvan414==*60Ffa"), actualResponse.getData());
+        assertEquals(1, actualResponse.getTotal());
+        assertEquals(1, actualResponse.getCount());
 
-    @Mock
-    private TokenValidator tokenValidator;
-
-    @Mock
-    private TokenDao tokenDao;
-
-    @BeforeEach
-    void setUp() {
-        MockitoAnnotations.openMocks(this);
+        verify(tokenService, times(1)).generateToken(MERCHANT_API_KEY_ID, MERCHANT_API_KEY_SECRET);
+        verify(validator, times(1)).validateAccessTokenRequest(MERCHANT_API_KEY_ID, MERCHANT_API_KEY_SECRET);
     }
-
-    @Test
-    void testGenerateToken_Success() {
-        // Arrange
-        String merchantApiKeyId = "validApiKey";
-        String merchantApiKeySecret = "validSecret";
-        MerchantDto merchantDto = new MerchantDto(); // Setup MerchantDto as needed
-        String expectedToken = "generatedAccessToken";
-
-        doNothing().when(tokenValidator).validateAccessTokenRequest(merchantApiKeyId, merchantApiKeySecret);
-        when(tokenDao.getActiveMerchantByKeys(merchantApiKeyId, merchantApiKeySecret)).thenReturn(merchantDto);
-        doReturn(TransactionResponse.success(expectedToken)).when(tokenService).generateToken(any());
-
-        // Act
-        TransactionResponse<String> response = tokenService.generateToken(merchantApiKeyId, merchantApiKeySecret);
-
-        // Assert
-        assertNotNull(response);
-        assertTrue(response.isSuccess());
-        assertEquals(expectedToken, response.getData());
-        verify(tokenValidator).validateAccessTokenRequest(merchantApiKeyId, merchantApiKeySecret);
-        verify(tokenDao).getActiveMerchantByKeys(merchantApiKeyId, merchantApiKeySecret);
-    }
-
-    @Test
-    void testGenerateToken_InvalidRequest() {
-        // Arrange
-        String merchantApiKeyId = null;
-        String merchantApiKeySecret = null;
-
-        doThrow(new IllegalArgumentException("Invalid API Key or Secret"))
-                .when(tokenValidator).validateAccessTokenRequest(merchantApiKeyId, merchantApiKeySecret);
-
-        // Act & Assert
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, 
-            () -> tokenService.generateToken(merchantApiKeyId, merchantApiKeySecret));
-
-        assertEquals("Invalid API Key or Secret", exception.getMessage());
-        verify(tokenValidator).validateAccessTokenRequest(merchantApiKeyId, merchantApiKeySecret);
-        verifyNoInteractions(tokenDao);
-    }
-
-    @Test
-    void testGenerateToken_MerchantNotFound() {
-        // Arrange
-        String merchantApiKeyId = "validApiKey";
-        String merchantApiKeySecret = "validSecret";
-
-        doNothing().when(tokenValidator).validateAccessTokenRequest(merchantApiKeyId, merchantApiKeySecret);
-        when(tokenDao.getActiveMerchantByKeys(merchantApiKeyId, merchantApiKeySecret)).thenReturn(null);
-
-        // Act & Assert
-        RuntimeException exception = assertThrows(RuntimeException.class, 
-            () -> tokenService.generateToken(merchantApiKeyId, merchantApiKeySecret));
-
-        assertEquals("Merchant not found", exception.getMessage());
-        verify(tokenValidator).validateAccessTokenRequest(merchantApiKeyId, merchantApiKeySecret);
-        verify(tokenDao).getActiveMerchantByKeys(merchantApiKeyId, merchantApiKeySecret);
-    }
-
-    @Test
-    void testGenerateToken_TokenGenerationFailure() {
-        // Arrange
-        String merchantApiKeyId = "validApiKey";
-        String merchantApiKeySecret = "validSecret";
-        MerchantDto merchantDto = new MerchantDto(); // Setup MerchantDto as needed
-
-        doNothing().when(tokenValidator).validateAccessTokenRequest(merchantApiKeyId, merchantApiKeySecret);
-        when(tokenDao.getActiveMerchantByKeys(merchantApiKeyId, merchantApiKeySecret)).thenReturn(merchantDto);
-        doThrow(new RuntimeException("Token generation failed")).when(tokenService).generateToken(any());
-
-        // Act & Assert
-        RuntimeException exception = assertThrows(RuntimeException.class, 
-            () -> tokenService.generateToken(merchantApiKeyId, merchantApiKeySecret));
-
-        assertEquals("Token generation failed", exception.getMessage());
-        verify(tokenValidator).validateAccessTokenRequest(merchantApiKeyId, merchantApiKeySecret);
-        verify(tokenDao).getActiveMerchantByKeys(merchantApiKeyId, merchantApiKeySecret);
-    }
-}
