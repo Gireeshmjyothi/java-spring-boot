@@ -1,62 +1,159 @@
-@Component
-@RequiredArgsConstructor
-public class TokenValidator extends BaseValidator {
+package com.epay.transaction.validator;
 
-    public void validateAccessTokenRequest(String merchantApiKeyId, String merchantApiKeySecret) {
-        checkMandatoryField("Merchant Api Key Id", merchantApiKeyId);
-        checkMandatoryField("Merchant Api Key Secret", merchantApiKeySecret);
-        throwIfErrors();
+import com.epay.transaction.exceptions.ValidationException;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+@ExtendWith(MockitoExtension.class)
+class TokenValidatorTest {
+
+    private TokenValidator tokenValidator;
+
+    @BeforeEach
+    void setUp() {
+        tokenValidator = new TokenValidator();
     }
 
-}
+    @Test
+    void validateAccessTokenRequest_ValidFields_ShouldNotThrowException() {
+        // Arrange
+        String validApiKeyId = "validApiKeyId";
+        String validApiKeySecret = "validApiKeySecret";
 
-
-public class BaseValidator {
-
-    List<ErrorDto> errorDtoList = new ArrayList<>();
-
-    void checkMandatoryField(String value, String fieldName) {
-        if (StringUtils.isEmpty(value)) {
-            addError(fieldName, ErrorConstants.MANDATORY_FOUND_ERROR_CODE, ErrorConstants.MANDATORY_ERROR_MESSAGE);
-        }
+        // Act & Assert
+        assertDoesNotThrow(() -> tokenValidator.validateAccessTokenRequest(validApiKeyId, validApiKeySecret));
     }
 
-    void checkMandatoryFields(String fieldName, String... values) {
-        boolean allEmpty = Arrays.stream(values).allMatch(StringUtils::isEmpty);
-        if (allEmpty) {
-            addError(fieldName, ErrorConstants.MANDATORY_FOUND_ERROR_CODE, ErrorConstants.MANDATORY_ERROR_MESSAGE);
-        }
+    @Test
+    void validateAccessTokenRequest_MissingApiKeyId_ShouldThrowValidationException() {
+        // Arrange
+        String missingApiKeyId = null;
+        String validApiKeySecret = "validApiKeySecret";
+
+        // Act
+        ValidationException exception = assertThrows(ValidationException.class, () ->
+                tokenValidator.validateAccessTokenRequest(missingApiKeyId, validApiKeySecret));
+
+        // Assert
+        assertEquals(1, exception.getErrorList().size());
+        assertEquals("Merchant Api Key Id is mandatory.", exception.getErrorList().get(0).getErrorMessage());
     }
 
-    void validateFieldLength(String value, int maxLength, String fieldName) {
-        if (StringUtils.isNotEmpty(value) && value.length() > maxLength) {
-            addError(fieldName, ErrorConstants.INVALID_ERROR_CODE, "Max allowed length is " + maxLength);
-        }
+    @Test
+    void validateAccessTokenRequest_MissingApiKeySecret_ShouldThrowValidationException() {
+        // Arrange
+        String validApiKeyId = "validApiKeyId";
+        String missingApiKeySecret = "";
+
+        // Act
+        ValidationException exception = assertThrows(ValidationException.class, () ->
+                tokenValidator.validateAccessTokenRequest(validApiKeyId, missingApiKeySecret));
+
+        // Assert
+        assertEquals(1, exception.getErrorList().size());
+        assertEquals("Merchant Api Key Secret is mandatory.", exception.getErrorList().get(0).getErrorMessage());
     }
 
-    void validateFieldWithRegex(String value, int maxLength, String regex, String fieldName, String message) {
-        if (StringUtils.isNotEmpty(value) && (value.length() > maxLength || validate(value, regex))) {
-            addError(fieldName, ErrorConstants.INVALID_ERROR_CODE, message + " " + maxLength);
-        }
+    @Test
+    void validateAccessTokenRequest_MissingBothFields_ShouldThrowValidationException() {
+        // Arrange
+        String missingApiKeyId = "";
+        String missingApiKeySecret = "";
+
+        // Act
+        ValidationException exception = assertThrows(ValidationException.class, () ->
+                tokenValidator.validateAccessTokenRequest(missingApiKeyId, missingApiKeySecret));
+
+        // Assert
+        assertEquals(2, exception.getErrorList().size());
+        assertTrue(exception.getErrorList().stream()
+                .anyMatch(error -> error.getErrorMessage().equals("Merchant Api Key Id is mandatory.")));
+        assertTrue(exception.getErrorList().stream()
+                .anyMatch(error -> error.getErrorMessage().equals("Merchant Api Key Secret is mandatory.")));
     }
 
-    void validateFieldWithRegex(String value, String regex, String fieldName, String message) {
-        if (StringUtils.isNotEmpty(value) && validate(value, regex)) {
-            addError(fieldName, ErrorConstants.INVALID_ERROR_CODE, message);
-        }
+    @Test
+    void validateFieldLength_ValidFieldLength_ShouldNotThrowException() {
+        // Arrange
+        String validValue = "12345";
+        int maxLength = 10;
+        String fieldName = "Test Field";
+
+        // Act & Assert
+        assertDoesNotThrow(() -> tokenValidator.validateFieldLength(validValue, maxLength, fieldName));
     }
 
-    void addError(String fieldName, String errorCode, String errorMessage) {
-        errorDtoList.add(ErrorDto.builder().errorCode(errorCode).errorMessage(MessageFormat.format(errorMessage, fieldName)).build());
+    @Test
+    void validateFieldLength_ExceedsMaxLength_ShouldThrowValidationException() {
+        // Arrange
+        String invalidValue = "12345678901"; // 11 characters
+        int maxLength = 10;
+        String fieldName = "Test Field";
+
+        // Act
+        ValidationException exception = assertThrows(ValidationException.class, () ->
+                tokenValidator.validateFieldLength(invalidValue, maxLength, fieldName));
+
+        // Assert
+        assertEquals(1, exception.getErrorList().size());
+        assertEquals("Max allowed length is 10", exception.getErrorList().get(0).getErrorMessage());
     }
 
-    void throwIfErrors() {
-        if (!errorDtoList.isEmpty()) {
-            throw new ValidationException(new ArrayList<>(errorDtoList));
-        }
+    @Test
+    void validateFieldWithRegex_ValidPattern_ShouldNotThrowException() {
+        // Arrange
+        String validValue = "abc123";
+        String regex = "^[a-zA-Z0-9]+$";
+        String fieldName = "Test Field";
+        String message = "Invalid format";
+
+        // Act & Assert
+        assertDoesNotThrow(() -> tokenValidator.validateFieldWithRegex(validValue, regex, fieldName, message));
     }
 
-    boolean validate(String value, String regex) {
-        return !Pattern.matches(regex, value);
+    @Test
+    void validateFieldWithRegex_InvalidPattern_ShouldThrowValidationException() {
+        // Arrange
+        String invalidValue = "abc@123";
+        String regex = "^[a-zA-Z0-9]+$";
+        String fieldName = "Test Field";
+        String message = "Invalid format";
+
+        // Act
+        ValidationException exception = assertThrows(ValidationException.class, () ->
+                tokenValidator.validateFieldWithRegex(invalidValue, regex, fieldName, message));
+
+        // Assert
+        assertEquals(1, exception.getErrorList().size());
+        assertEquals("Invalid format", exception.getErrorList().get(0).getErrorMessage());
+    }
+
+    @Test
+    void checkMandatoryField_ValidField_ShouldNotThrowException() {
+        // Arrange
+        String validValue = "validValue";
+        String fieldName = "Test Field";
+
+        // Act & Assert
+        assertDoesNotThrow(() -> tokenValidator.checkMandatoryField(validValue, fieldName));
+    }
+
+    @Test
+    void checkMandatoryField_EmptyField_ShouldThrowValidationException() {
+        // Arrange
+        String emptyValue = "";
+        String fieldName = "Test Field";
+
+        // Act
+        ValidationException exception = assertThrows(ValidationException.class, () ->
+                tokenValidator.checkMandatoryField(emptyValue, fieldName));
+
+        // Assert
+        assertEquals(1, exception.getErrorList().size());
+        assertEquals("Test Field is mandatory.", exception.getErrorList().get(0).getErrorMessage());
     }
 }
