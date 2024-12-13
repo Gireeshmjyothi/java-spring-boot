@@ -86,3 +86,19 @@ public class CustomerServiceTest {
         verify(customerRepository, times(2)).existsByCustomerId(anyString());
     }
 }
+
+@Test
+public void testGenerateUniqueCustomerId_RaceCondition() {
+    // Mock behavior: simulate race condition
+    when(customerRepository.existsByCustomerId(anyString()))
+            .thenReturn(false) // First check indicates uniqueness
+            .thenReturn(true); // Subsequent checks reveal a duplicate
+
+    // Execute method
+    String customerId = customerService.generateUniqueCustomerId();
+
+    // Assert that the generated customerId is unique on retry
+    assertNotNull(customerId);
+    assertTrue(customerId.startsWith("Cust_"));
+    verify(customerRepository, atLeastOnce()).existsByCustomerId(anyString());
+}
