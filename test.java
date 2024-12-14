@@ -1,104 +1,87 @@
-public String generateUniqueCustomerId() {
-        logger.info("CustomerId generation initiated");
-        int retryCount = 1;
-        String customerId = "Cust_" + RandomStringUtils.randomAlphanumeric(16);
-        while (retryCount < 3 && customerRepository.existsByCustomerId(customerId)) {
-            customerId = "Cust_" + RandomStringUtils.randomAlphanumeric(16);
-            retryCount++;
-        }
-        if (retryCount == 3 && customerRepository.existsByCustomerId(customerId)) {
-            throw new TransactionException(ErrorConstants.ALREADY_EXIST_ERROR_CODE, MessageFormat.format(ErrorConstants.ALREADY_EXIST_ERROR_MESSAGE, "customerId"));
-        }
-        logger.info("CustomerId created successfully");
-        return customerId;
+package com.continuum.cms.mapper;
+
+import com.continuum.cms.entity.ChargingSession;
+import com.continuum.cms.model.response.ChargingSessionResponse;
+import com.continuum.cms.util.DateUtil;
+import com.continuum.cms.util.EncryptionUtil;
+import ma.glasnost.orika.CustomMapper;
+import ma.glasnost.orika.MapperFacade;
+import ma.glasnost.orika.MapperFactory;
+import ma.glasnost.orika.MappingContext;
+import ma.glasnost.orika.impl.DefaultMapperFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+
+import java.util.List;
+
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
+
+@Component
+@Slf4j
+public class ChargingSessionMapper {
+    private final MapperFactory mapperFactory;
+    private final MapperFacade mapperFacade;
+    @Autowired
+    public ChargingSessionMapper() {
+        this.mapperFactory = new DefaultMapperFactory.Builder().build();
+        this.mapperFacade = mapperFactory.getMapperFacade();
+        configureMapper();
     }
 
-import static org.mockito.Mockito.*;
-import static org.junit.jupiter.api.Assertions.*;
-
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import org.slf4j.Logger;
-
-public class CustomerServiceTest {
-
-    @Mock
-    private CustomerRepository customerRepository;
-
-    @Mock
-    private Logger logger;
-
-    @InjectMocks
-    private CustomerService customerService;
-
-    @BeforeEach
-    public void setUp() {
-        MockitoAnnotations.openMocks(this);
+    private void configureMapper() {
+        mapperFactory.classMap(ChargingSession.class,ChargingSessionResponse.class)
+                .field("chargingStation.locationId", "locationId")
+                .field("chargingStation.name", "name")
+                .field("chargingStation.city", "city")
+                .field("latitude", "geoLocation.latitude")
+                .field("longitude", "geoLocation.longitude")
+                .field("transactionId", "sessionId")
+                .field("vendorCustomer.firstName", "userDetails.firstName")
+                .field("vendorCustomer.lastName", "userDetails.lastName")
+                .field("vendorCustomer.userType", "userDetails.userType")
+                .field("vendorBankDetails.vendor.name", "vendorName")
+                .field("vendorBankDetails.vendor.id", "vendorId")
+                .field("vendorBankDetails.cin", "vendorCode")
+                .field("carbonCreditDetail.creditScorePoints", "carbonCreditGenerated")
+                .field("carbonCreditDetail.certificateNumber", "batchNo")
+                .customize(new CustomMapper<ChargingSession, ChargingSessionResponse>() {
+                    @Override
+                    public void mapAtoB(ChargingSession source, ChargingSessionResponse target, MappingContext context) {
+                        if (source.getVendorCustomer().getEmail() != null) {
+                            target.getUserDetails().setEmail(EncryptionUtil.decryptEmailAndMobile(source.getVendorCustomer().getEmail()));
+                        }
+                        if (source.getVendorCustomer().getMobile() != null) {
+                            target.getUserDetails().setMobile(EncryptionUtil.decryptEmailAndMobile(source.getVendorCustomer().getMobile()));
+                        }
+                        if(source.getStartAt() != null && source.getStopAt() != null){
+                            target.setStartAt(DateUtil.getISTToUTC(source.getStartAt()));
+                            target.setStopAt(DateUtil.getISTToUTC(source.getStopAt()));
+                        }
+                    }
+                })
+                .byDefault()
+                .mapNulls(false)
+                .register();
     }
 
-    @Test
-    public void testGenerateUniqueCustomerId_PositiveScenario() {
-        // Mock behavior
-        when(customerRepository.existsByCustomerId(anyString())).thenReturn(false);
-
-        // Execute method
-        String customerId = customerService.generateUniqueCustomerId();
-
-        // Verify and Assert
-        assertNotNull(customerId);
-        assertTrue(customerId.startsWith("Cust_"));
-        assertEquals(21, customerId.length()); // "Cust_" + 16 alphanumeric
-        verify(customerRepository, times(1)).existsByCustomerId(anyString());
+    public List<ChargingSessionResponse> mapToChargingSessionList(List<ChargingSession> chargingSessionList) {
+        log.info("Mapping Charging-session list.");
+        return mapperFacade.mapAsList(chargingSessionList, ChargingSessionResponse.class);
     }
 
-    @Test
-    public void testGenerateUniqueCustomerId_NegativeScenario() {
-        // Mock behavior: simulate customerId already exists for 3 retries
-        when(customerRepository.existsByCustomerId(anyString())).thenReturn(true);
-
-        // Execute and Assert
-        TransactionException exception = assertThrows(TransactionException.class, 
-                () -> customerService.generateUniqueCustomerId());
-        
-        assertEquals(ErrorConstants.ALREADY_EXIST_ERROR_CODE, exception.getErrorCode());
-        assertTrue(exception.getMessage().contains("customerId"));
-
-        // Verify
-        verify(customerRepository, times(3)).existsByCustomerId(anyString());
-    }
-
-    @Test
-    public void testGenerateUniqueCustomerId_RetryScenario() {
-        // Mock behavior: customerId exists on the first attempt but succeeds on the second
-        when(customerRepository.existsByCustomerId(anyString()))
-                .thenReturn(true)  // First attempt
-                .thenReturn(false); // Second attempt
-
-        // Execute method
-        String customerId = customerService.generateUniqueCustomerId();
-
-        // Verify and Assert
-        assertNotNull(customerId);
-        assertTrue(customerId.startsWith("Cust_"));
-        verify(customerRepository, times(2)).existsByCustomerId(anyString());
-    }
 }
 
-@Test
-public void testGenerateUniqueCustomerId_RaceCondition() {
-    // Mock behavior: simulate race condition
-    when(customerRepository.existsByCustomerId(anyString()))
-            .thenReturn(false) // First check indicates uniqueness
-            .thenReturn(true); // Subsequent checks reveal a duplicate
 
-    // Execute method
-    String customerId = customerService.generateUniqueCustomerId();
+ Page<ChargingSession> chargingSessionsList = chargingSessionDao.getAllChargingSession(chargingSessionFilter, search, pageable, vendorCodes);
+        log.info("Successfully fetched charging session details.");
+        return ResponseDto.<ChargingSessionResponse>builder()
+                .data(sessionMapper.mapToChargingSessionList(chargingSessionsList.getContent()))
+                .status(RESPONSE_SUCCESS)
+                .count(chargingSessionsList.stream().count())
+                .total(chargingSessionsList.getTotalElements())
+                .build();
+    }
 
-    // Assert that the generated customerId is unique on retry
-    assertNotNull(customerId);
-    assertTrue(customerId.startsWith("Cust_"));
-    verify(customerRepository, atLeastOnce()).existsByCustomerId(anyString());
-}
+// implementation 'com.github.jmapper-framework:orika:1.7.5'
+
+// implementation 'ma.glasnost.orika:orika-core:1.5.4'
